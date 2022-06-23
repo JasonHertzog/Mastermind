@@ -9,7 +9,6 @@
 """
 To-Do:
     - Add additional colors to the game (Aim for 8 colors).
-    - Add 1 vs. Computer mode.
     - Add Computer vs. Computer simulation mode.
     BONUS
         - Add a bulk simulation mode (10,000 games) to train a ML algorithm.
@@ -113,9 +112,11 @@ def generate_code(player):
 def generate_random_code():
     # Generates a random code.
     code = []
-    for i in range(5):
+    while len(code) < 5:
         code.append(random.choice(["🔴", "🔵", "🟢", "🟡"]))
     print("")
+    # THIS IS FOR DEBUGGING PURPOSES.
+    print(code)
     return code
 
 
@@ -154,16 +155,11 @@ def mode_choose():
         input()
         # Ask for player name
         print("")
-        print("Enter player 1's name: ")
-        player1 = input()
-        if player1 == "":
-            player1 = "Player 1"
-        print("")
-        print("Press enter to continue...")
-        input()
+        print("Welcome human!")
         print("")
         print("The game begins.")
         print("")
+        one_player_mode()
     if choice == 3:
         print("")
         print("You have chosen to let the computer try and beat the computer. Weird.")
@@ -374,11 +370,159 @@ def two_player_game(player1, player2):
         print("")
         if player1_turn == False and turn != 0:
             player2_guess = display_and_clear_guesses(player2_guess)
-            player2_clues = displayer_and_clear_clues(player2_clues)
+            player2_clues = display_and_clear_clues(player2_clues)
         elif player1_turn == True and turn != 1:
             player1_guess = display_and_clear_guesses(player1_guess)
-            player1_clues = displayer_and_clear_clues(player1_clues)
+            player1_clues = display_and_clear_clues(player1_clues)
     determine_winner(player1, player2, player1_score, player2_score)
+
+
+def one_player_mode():
+    """
+    One player mode.
+    """
+    turn = 1
+    player1_turn = True # This means the player is the guesser.
+    player1_guess = []
+    player1_clues = []
+    player1_code = []
+    player1_score = -1
+    # ai stuff is for ai, obviously
+    ai_guess = []
+    ai_clues = []
+    ai_code = []
+    ai_smart = 1 # 1 = easy (random guesses), 2 = medium, 3 = hard, 4 = algorithmic genius.
+    ai_score = -1
+    player1 = "Human"
+
+
+    print("#" * 64)
+    print(" " * 10 + "One Player Mode: You will guess the code first.")
+    print("#" * 64)
+    print("")
+    player1_code = generate_random_code()
+    print("The code has been selected by the Mastermind (Computer).")
+    print("")
+    print("Press enter to continue...")
+    input()
+    print("")
+
+
+    # game start
+    while (ai_score == -1):
+        if player1_turn == True:
+            # Allow player 1 to guess code.
+            player1_guess = guess_code(player1, player1_clues, player1_turn, player1_guess)
+            # print that player 1 has guessed player1_guess in a string format.
+            print(player1 + " guessed")
+            expanded_code = expand_code(player1_guess)
+            for i in range(len(expanded_code)):
+                print(str(i + 1) + ": " + expanded_code[i], end="   ")
+            # Check if player 1 has guessed correctly
+            if player1_guess == player1_code:
+                print("")
+                print("#" * 64)
+                print((" " * 10) + player1 + " has guessed correctly!")
+                print("#" * 64)
+                print("")
+                print(player1 + ": Press enter to continue...")
+                input()
+                print("")
+                print(player1 + " has guessed correctly in " + str(turn) + " turns!")
+                print("")
+                player1_score = turn
+                player1_turn = False
+                turn = 1
+            else:
+                print("")
+                print("#" * 64)
+                print((" " * 10) + player1 + " has guessed incorrectly!")
+                print("#" * 64)
+                print("")
+                print(player1 + ": Press enter to be given a clue...")
+                input()
+                print("")
+                # Give player 1 clues.
+                player1_clues = give_clue(player1_guess, player1_code)
+                print("The Mastermind gave the following clues: " + str(player1_clues))
+                print("")
+                print(player1 + ": Press enter to continue...")
+                input()
+                print("")
+                turn += 1 # iterate turn counter.
+                turn = check_out_of_turns(turn, player1_turn, player1, "The AI")
+                print("Turn: " + str(turn))
+                print("")
+                player1_clues = display_and_clear_clues(player1_clues)
+                player1_guess = display_and_clear_guesses(player1_guess)
+                if turn == 11:
+                    player1_score = 11
+                    player1_turn = False
+                    turn = 1
+        if player1_turn == False and turn == 1:
+            # Player must set a code for the AI to guess.
+            ai_code = generate_code(player1)
+            print("The code has been selected by the Mastermind (You).")
+            print("")
+            print("Press enter to continue...")
+            input()
+            print("")
+        if player1_turn == False:
+            # Allow the AI to guess the code.
+            ai_guess = ai_guess_code(ai_clues, ai_guess, ai_smart)
+            # print that AI has guessed ai_guess in a string format.
+            print("The AI guessed")
+            expanded_code = expand_code(ai_guess)
+            for i in range(len(expanded_code)):
+                print(str(i + 1) + ": " + expanded_code[i], end="   ")
+            # Check if AI has guessed correctly
+            if ai_guess == ai_code:
+                print("")
+                print("#" * 64)
+                print((" " * 10) + "The AI has guessed correctly!")
+                print("#" * 64)
+                print("")
+                print("The AI has guessed correctly in " + str(turn) + " turns!")
+                print("")
+                ai_score = turn
+                player1_turn = True
+                turn = 0
+                determine_winner(player1, "The AI", player1_score, ai_score)
+            else:
+                print("")
+                print("#" * 64)
+                print((" " * 10) + "The AI has guessed incorrectly!")
+                print("#" * 64)
+                print("")
+                print("The AI will automatically be given clues.")
+                print("")
+                # Give the AI clues.
+                ai_clues = give_clue(ai_guess, ai_code)
+                print("The Mastermind gave the following clues: " + str((ai_clues)))
+                print("")
+                print("Press enter to continue...")
+                input()
+                print("")
+                turn += 1 # iterate turn counter.
+                turn = check_out_of_turns(turn, player1_turn, "The AI", player1)
+                print("Turn: " + str(turn))
+                print("")
+                ai_clues = display_and_clear_clues(ai_clues)
+                ai_guess = display_and_clear_guesses(ai_guess)
+                if turn == 11:
+                    ai_score = 11
+                    player1_turn = True
+                    turn = 0
+                    determine_winner(player1, "The AI", player1_score, ai_score)
+    determine_winner(player1, "The AI", player1_score, ai_score)
+
+
+                
+
+
+
+
+
 
 def check_out_of_turns(turn, player1_turn, player1, player2):
     if turn > 10:
@@ -395,6 +539,7 @@ def check_out_of_turns(turn, player1_turn, player1, player2):
     else:
         return turn
 
+
 def display_and_clear_guesses(guess):
     """
     This function displays guesses before clearing.
@@ -407,7 +552,7 @@ def display_and_clear_guesses(guess):
     guess = []
     return guess
 
-def displayer_and_clear_clues(clues):
+def display_and_clear_clues(clues):
     """
     This function displays clues before clearing.
     """
@@ -468,10 +613,8 @@ def guess_code(player, player_clues, player_turn, player_guess):
     # Show clues if there are any.
     if len(player_clues) > 0:
         print("")
-        print(player + ": Here are the clues you have given so far:")
-        print("")
         for clue in player_clues:
-            print(clue)
+            print(clue, end="   ")
         print("")
     # Player guesses the code.
     guess = []
@@ -504,6 +647,22 @@ def guess_code(player, player_clues, player_turn, player_guess):
         else:
             player_guess.append(guess)
     return player_guess
+
+def ai_guess_code(ai_clues, ai_guess, ai_smart):
+    # Easy mode.
+    if(ai_smart == 1):
+        # Guess 5 random colors.
+        for i in range(5):
+            guess = random.choice(["🔴", "🔵", "🟢", "🟡"])
+            ai_guess.append(guess)
+        return ai_guess
+
+    # ai_clues used from Medium mode up.
+    # Medium Mode
+
+    # Hard Mode
+
+    # Algorithmic Genius Mode
 
 
 
